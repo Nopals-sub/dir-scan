@@ -1,4 +1,4 @@
-# Directory and File Scanner
+# Simple Directory & File Listing 
 
 This Go program scans directories and files on a specified domain. It recursively finds and lists directories and files, while filtering out duplicate results. It also handles both HTTP and HTTPS protocols and provides an option to resume or stop the scan if interrupted.
 
