@@ -159,7 +159,8 @@ func main() {
 	// Get domain from command line arguments
 	args := flag.Args()
 	if len(args) < 1 {
-		fmt.Println("Usage: go run dir.go <domain> [-s]")
+		fmt.Println("Usage: go run dir.go <domain>")
+		fmt.Println("Use `go run dir.go -s <domain>` to save the output")
 		os.Exit(1)
 	}
 	domain := args[0]
