@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -39,9 +40,10 @@ func getContent(pageURL string) (string, error) {
 	return string(body), nil
 }
 
-func getDirectoriesAndFiles(baseURL string) {
+func getDirectoriesAndFiles(baseURL string, saveToFile bool) {
 	visited := map[string]bool{}  // Keep track of visited URLs
 	toVisit := []string{baseURL}  // Queue of URLs to visit
+	var output []string
 
 	for len(toVisit) > 0 {
 		currentURL := toVisit[0]
@@ -53,10 +55,12 @@ func getDirectoriesAndFiles(baseURL string) {
 
 		visited[currentURL] = true
 		color.Cyan("Scanning: %s", currentURL)
+		output = append(output, fmt.Sprintf("Scanning: %s", currentURL))
 
 		content, err := getContent(currentURL)
 		if err != nil {
 			color.Red("Error accessing %s: %v", currentURL, err)
+			output = append(output, fmt.Sprintf("Error accessing %s: %v", currentURL, err))
 			continue
 		}
 
@@ -78,17 +82,33 @@ func getDirectoriesAndFiles(baseURL string) {
 							if strings.HasSuffix(fullURL, "/") { // It's a directory
 								if !visited[fullURL] && !contains(toVisit, fullURL) {
 									color.Yellow("[DIR] %s", fullURL)
+									output = append(output, fmt.Sprintf("[DIR] %s", fullURL))
 									toVisit = append(toVisit, fullURL)
 								}
 							} else { // It's a file
 								if !visited[fullURL] {
 									color.Green("[FILE] %s", fullURL)
+									output = append(output, fmt.Sprintf("[FILE] %s", fullURL))
 								}
 							}
 						}
 					}
 				}
 			}
+		}
+	}
+
+	// Save output to file if the -s flag is provided
+	if saveToFile {
+		domain := strings.ReplaceAll(baseURL, "http://", "")
+		domain = strings.ReplaceAll(domain, "https://", "")
+		domain = strings.ReplaceAll(domain, "/", "")
+		filename := fmt.Sprintf("%s.txt", domain)
+		err := saveOutputToFile(filename, output)
+		if err != nil {
+			color.Red("Error saving to file: %v", err)
+		} else {
+			color.Green("Output saved to %s", filename)
 		}
 	}
 }
@@ -114,12 +134,41 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
+func saveOutputToFile(filename string, output []string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	for _, line := range output {
+		_, err := writer.WriteString(line + "\n")
+		if err != nil {
+			return err
+		}
+	}
+	return writer.Flush()
+}
+
 func main() {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter domain (e.g., https://example.com): ")
-	domain, _ := reader.ReadString('\n')
-	domain = strings.TrimSpace(domain)
+	// Define flags
+	saveFlag := flag.Bool("s", false, "Save output to a file")
+	flag.Parse()
+
+	// Get domain from command line arguments
+	args := flag.Args()
+	if len(args) < 1 {
+		fmt.Println("Usage: go run dir.go <domain> [-s]")
+		os.Exit(1)
+	}
+	domain := args[0]
+
+	// Add http if protocol is missing
+	if !strings.HasPrefix(domain, "http://") && !strings.HasPrefix(domain, "https://") {
+		domain = "http://" + domain
+	}
 
 	color.Cyan("\nStarting directory and file scan on %s\n", domain)
-	getDirectoriesAndFiles(domain)
+	getDirectoriesAndFiles(domain, *saveFlag)
 }
