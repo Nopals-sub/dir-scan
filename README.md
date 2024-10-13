@@ -39,10 +39,10 @@ To run this project, you need:
 Run the program and input a domain:
 
 ```bash
-go run dir.go <domain>
+go run dir.go -url <domain>
 ```
 
 To save our output use:
 
 ```bash
-go run dir.go -s <domain>
+go run dir.go -url <domain> -s
