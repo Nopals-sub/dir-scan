@@ -40,8 +40,9 @@ Run the program and input a domain:
 
 ```bash
 go run dir.go <domain>
+```
 
-To save our output
+To save our output use:
 
 ```bash
 go run dir.go -s <domain>
